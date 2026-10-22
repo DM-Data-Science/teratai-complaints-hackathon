@@ -30,7 +30,10 @@ ROOT = Path(__file__).resolve().parent.parent
 FIELDS = ["complaint_id", "customer_id", "received_at", "channel", "subject", "text"]
 ALLOWED = {"category": {"DUPLICATE_CHARGE", "FAILED_TRANSFER", "ATM_NOT_DISPENSED", "UNAUTHORISED_CARD", "SCAM_TRANSFER", "FEE_DISPUTE", "SERVICE_QUALITY"},
            "outcome": {"REFUND", "DECLINE", "INVESTIGATE", "INFO_ONLY"}, "priority": {"P1", "P2", "P3"}, "reply_language": {"EN", "MS"},
-           "route": {"AUTO_RESOLVE", "HUMAN_APPROVAL", "FRAUD_TEAM"}, "self_check": {"passed", "flagged"}}
+           "route": {"AUTO_RESOLVE", "HUMAN_APPROVAL", "FRAUD_TEAM"}, "self_check": {"passed", "flagged"},
+           "case_state": {"auto_resolved", "awaiting_approval", "with_fraud_team", "approved", "rejected"}}
+STATE_FOR_ROUTE = {"AUTO_RESOLVE": ("auto_resolved", True), "HUMAN_APPROVAL": ("awaiting_approval", False), "FRAUD_TEAM": ("with_fraud_team", None)}
+DECISION = ("category", "matched_txn_id", "outcome", "refund_amount_myr", "priority", "reply_language", "route", "reply_text")
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -64,7 +67,45 @@ def contract_problems(case):
         probs.append("reply_text empty")
     if "matched_txn_id" not in case:
         probs.append("matched_txn_id missing")
+    if not isinstance(case.get("sent"), bool):
+        probs.append(f"sent={case.get('sent')!r} (must be true or false)")
+    if "human_action" not in case:
+        probs.append("human_action missing (null until a human acts)")
     return probs
+
+
+def state_matches_route(case):
+    """case_state and sent as the contract requires for the route the agent chose (before any human action)."""
+    want = STATE_FOR_ROUTE.get(case.get("route"))
+    if not want:
+        return False
+    state, sent = want
+    return case.get("case_state") == state and (sent is None or case.get("sent") is sent)
+
+
+def hitl_probes(base, results):
+    """Human in the loop, on one case the team's agent routed to HUMAN_APPROVAL."""
+    target = next((r["case"] for r in results if "case" in r and r["case"].get("route") == "HUMAN_APPROVAL"
+                   and r["case"].get("case_state") == "awaiting_approval"), None)
+    if target is None:
+        return [("Human-in-the-loop probes (skipped: no case waiting for approval in this run)", False, None)]
+    cid, url = target["complaint_id"], f"{base}/cases/{target['complaint_id']}"
+    rows = [("Approval case waits: awaiting_approval and sent false", target.get("sent") is False, 200)]
+    bad = {"action": "edit_approve", "actor": "api_check probe", "reason": "probe: invented amount",
+           "reply_text": str(target.get("reply_text", "")) + " We have also credited RM987.65 to your account."}
+    s, _ = http("POST", f"{url}/actions", bad, timeout=60)
+    _, after = http("GET", url, timeout=30)
+    held = isinstance(after, dict) and after.get("case_state") == "awaiting_approval" and after.get("sent") is False
+    rows.append(("Edited reply with an invented amount is refused (4xx) and nothing is sent", s is not None and 400 <= s < 500 and held, s))
+    s, _ = http("POST", f"{url}/actions", {"action": "approve", "actor": "api_check probe", "reason": "probe: approve"}, timeout=60)
+    _, done = http("GET", url, timeout=30)
+    ok = (s == 200 and isinstance(done, dict) and done.get("case_state") == "approved" and done.get("sent") is True
+          and isinstance(done.get("human_action"), dict) and done["human_action"].get("actor") == "api_check probe"
+          and all(done.get(k) == target.get(k) for k in DECISION))
+    rows.append((f"Approve moves {cid} to approved, sent true, records the actor, keeps the agent's decision", ok, s))
+    s, _ = http("POST", f"{url}/actions", {"action": "approve", "actor": "api_check probe", "reason": "again"}, timeout=60)
+    rows.append(("Acting on a case that is no longer waiting returns 409", s == 409, s))
+    return rows
 
 
 def run_one(base, complaint, timeout):
@@ -127,7 +168,7 @@ def main():
     with cf.ThreadPoolExecutor(max_workers=min(32, len(pool) or 1)) as ex:
         results = list(ex.map(lambda c: run_one(base, c, a.timeout), pool))
 
-    points, crit, hits, broken, secs = [], {"wrongful refund": 0, "missed fraud": 0}, {f: 0 for f in WEIGHTS}, [], []
+    points, crit, hits, broken, secs, hitl_ok = [], {"wrongful refund": 0, "missed fraud": 0}, {f: 0 for f in WEIGHTS}, [], [], 0
     for r in results:
         t = labels[r["id"]]
         if "error" in r:
@@ -147,7 +188,9 @@ def main():
         if t["outcome"] == "INVESTIGATE" and str(case.get("outcome", "")).upper() != "INVESTIGATE":
             crit["missed fraud"] += 1
         route_ok = str(case.get("route", "")).upper() == t["route"]
-        print(f"{r['id']:<12} {r['seconds']:5.1f}s  {points[-1]:>3}/100  route {'ok' if route_ok else 'WRONG'}  "
+        state_ok = state_matches_route(case)
+        hitl_ok += state_ok
+        print(f"{r['id']:<12} {r['seconds']:5.1f}s  {points[-1]:>3}/100  route {'ok' if route_ok else 'WRONG'}  state {'ok' if state_ok else 'WRONG'}  "
               + ", ".join(f"{f} {'ok' if ok else 'x'}" for f, ok in got.items()))
     n = len(results) or 1
     mean = sum(points) / n
@@ -156,6 +199,7 @@ def main():
     for f in WEIGHTS:
         print(f"{f:<20}{hits[f] / n:.0%}")
     print(f"\nmean points      {mean:.1f} / 100\ncritical errors  {sum(crit.values())} {crit}\nSCORE            {final:.1f}")
+    print(f"case_state and sent match the route: {hitl_ok}/{n}")
     if secs:
         q = sorted(secs)
         print(f"time per complaint: median {statistics.median(q):.1f}s, slowest {q[-1]:.1f}s")
@@ -163,14 +207,14 @@ def main():
         print(f"\nContract problems or failures ({len(broken)}):")
         for i, e in broken:
             print(f"  {i}: {e}")
-    probe_rows = [] if a.no_probes or not pool else probes(base, pool[0])
+    probe_rows = [] if a.no_probes or not pool else probes(base, pool[0]) + hitl_probes(base, results)
     if probe_rows:
         print("\nRobustness probes:")
         for name, ok, s in probe_rows:
             print(f"  [{'PASS' if ok else 'FAIL'}] {name} (HTTP {s})")
     if a.out:
         Path(a.out).write_text(json.dumps({"base_url": base, "score": round(final, 2), "mean_points": round(mean, 2), "critical": crit,
-                                           "accuracy": {f: hits[f] / n for f in WEIGHTS}, "failures": broken,
+                                           "accuracy": {f: hits[f] / n for f in WEIGHTS}, "failures": broken, "state_matches_route": hitl_ok / n,
                                            "median_seconds": statistics.median(secs) if secs else None,
                                            "probes": [{"check": c, "pass": ok, "http": s} for c, ok, s in probe_rows]}, indent=2), encoding="utf-8")
         print(f"\nwrote {a.out}")

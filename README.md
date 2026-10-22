@@ -56,7 +56,7 @@ This is an agent hackathon, not a classification contest. A model that only labe
 1. **Expose the API.** Your agent runs as a small service with a fixed API ([`docs/api.md`](docs/api.md)): a complaint POSTed to it starts the workflow on its own, and the decision can be read back. That is how the live round sends you complaints.
 2. **Use tools.** It looks things up through tools or functions (customer, accounts, transactions, ATM journal, fee schedule). It does not paste whole tables into a prompt.
 3. **Act.** It writes a case record: the decision, the evidence it used and the drafted reply.
-4. **Keep a human in charge.** Cases that need approval wait in an approval queue, and fraud cases land in a fraud queue. Nothing that needs approval goes out without it.
+4. **Keep a human in charge.** Cases that need approval wait in an approval queue, and fraud cases land in a fraud queue. Nothing that needs approval goes out without it. In the API this shows as `case_state` and `sent`, and people act through `POST /cases/{id}/actions` ([`docs/api.md`](docs/api.md#case-states-human-in-the-loop)).
 5. **Check itself.** Code, not the LLM, checks that every transaction ID and amount in the reply appears in the evidence. Anything that fails the check is flagged.
 
 The design that wins: **the LLM does language** (understanding the complaint, writing the reply), and **code does money and rules** (finding the transaction, applying the policy, working out the refund).
@@ -111,7 +111,7 @@ Two parts, inside your 8-minute demo. Both go through your API ([`docs/api.md`](
 
 **Hidden test (15 points, automatic).** Our script sends **20 complaints you have never seen** to your API, all at once, and scores the answers exactly like the leaderboard (score × 0.15). They are about customers and transactions already in the data, but they are written the way real customers write: typos, SMS short forms, emoji, mixed English and Malay. An agent tuned to the wording of `complaints.csv` will struggle; one that understands language won't. Each complaint carries its own `received_at`: use it, not today's date. Run the same script on yourself with training complaints any time: `python scoring/api_check.py http://localhost:8000`.
 
-**Human gate (10 points, judges).** We then send 3 more complaints, one at a time, and watch. The case appears on its own, and you show us the matched transaction, the evidence, the decision, the route, the reply and the self-check. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue.
+**Human gate (10 points, judges).** We then send 3 more complaints, one at a time, and watch. The case appears on its own, and you show us the matched transaction, the evidence, the decision, the route, the reply and the self-check. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue. We also check this through the API: until it's approved, a case waiting for approval must show `case_state: awaiting_approval` and `sent: false`.
 
 Every live complaint is the six fields of a `complaints.csv` row as JSON. [`examples/live_complaint_example.json`](examples/live_complaint_example.json) is one (training complaint CMP-00244). The script's robustness probes and timings go to the judges as part of the engineering score.
 
@@ -201,6 +201,8 @@ If this repo changes before the event (clarifications only, never the data), syn
 Separately, there is an optional **Best Ops Platform** award for teams that build a full staff app: role-based queues, two-tier approval and an audit trail ([`docs/bonus_platform.md`](docs/bonus_platform.md)). It is judged on its own and doesn't change the main ranking.
 
 **Do we need to build an API?** Yes, a small one with a fixed contract: `POST /complaints`, `GET /cases/{complaint_id}` and `GET /health` ([`docs/api.md`](docs/api.md)). It's about 30 lines with FastAPI ([`docs/build_guide.md`](docs/build_guide.md#the-api)). It's how the live round sends you complaints, so every team is tested the same way. Check yours with `python scoring/api_check.py`.
+
+**How do approvals work through the API?** Each case carries `case_state` (`auto_resolved`, `awaiting_approval`, `with_fraud_team`, `approved`, `rejected`) and `sent`. A person acts with `POST /cases/{id}/actions`: approve, reject, or edit and approve, with their name and a reason. An edited reply must pass your self-check. The agent's own decision never changes; the human's action is stored next to it in `human_action`. Your UI's buttons can call the same endpoint. Details and examples: [`docs/api.md`](docs/api.md#post-casescomplaint_idactions).
 
 **Do we need an API gateway, keys or rate limits?** No. Our calls carry no credentials. We do check that bad input gets a `4xx` instead of a crash, that posting the same complaint twice doesn't create a second case, and how long each complaint takes; those results feed the engineering score.
 
