@@ -166,6 +166,10 @@ python starter/check_reply.py CMP-00244 "We have refunded RM600.00 for transacti
 
 More in [`docs/build_guide.md`](docs/build_guide.md): a reference workflow, where to use the LLM and where to use code, and common pitfalls.
 
+## Bonus: the ops platform
+
+An optional, separately judged award ("Best Ops Platform") for teams that turn the case record into a real back-office system: complaints officers and fraud analysts sign in to interfaces fitted to their job and see only their cases, a manager handles second-tier approval across both queues, and every action is written back and audited. It does not affect the main ranking or the leaderboard. See [`docs/bonus_platform.md`](docs/bonus_platform.md).
+
 ## Submitting
 
 1. Fork this repo (one fork per team) and build in your fork.
@@ -173,11 +177,13 @@ More in [`docs/build_guide.md`](docs/build_guide.md): a reference workflow, wher
 3. Save `submissions/<team-name>/predictions.csv` with these columns: `complaint_id, category, matched_txn_id, outcome, refund_amount_myr, priority, reply_language, route, reply_text`. The format is in [`docs/scoring.md`](docs/scoring.md).
 4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork.
 
+Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
+
 If this repo changes before the event (clarifications only, never the data), sync your fork with GitHub's **Sync fork** button.
 
 ## Ground rules
 
-- **Your workflow produces the answers.** No hand-labelling of the test set. The live round shows whether your system really works; a big gap between your leaderboard score and the live round will be questioned.
+- **Your workflow produces the answers.** No hand-labelling of the test set. The live round shows whether your system really works; a big gap between your leaderboard score and the live round will be questioned. This holds even if you build the [bonus ops platform](docs/bonus_platform.md): the scored `predictions.csv` is always the agent's autonomous decision, never the human-corrected one.
 - **Use any tools.** That includes any LLM, framework or cloud service. You may use the training labels however you like: few-shot examples, evaluation, fine-tuning.
 - **Data stays synthetic.** Don't add real customer data, and keep API keys out of the repo.
 - **Ask early.** If a rule is unclear, [open an issue](https://github.com/DM-Data-Science/teratai-complaints-hackathon/issues) in this repo. Every team can see the answers.
@@ -186,7 +192,7 @@ If this repo changes before the event (clarifications only, never the data), syn
 
 ```
 data/          the CSVs (complaints, customers, accounts, transactions, ATM journal, policies, training labels, test IDs)
-docs/          data dictionary, scoring details, build guide
+docs/          data dictionary, scoring details, build guide, bonus ops platform
 starter/       evidence pack builder, reply checker, keyword baseline (Python, standard library only)
 scoring/       score.py: the scorer used for the leaderboard
 submissions/   one folder per team
