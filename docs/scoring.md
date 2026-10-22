@@ -40,7 +40,7 @@ Each complaint earns up to 100 points:
 
 **Final score = mean points × (1 − 2 × critical error rate)**, never below 0. Example: a mean of 90 with 3% critical errors gives 90 × 0.94 = 84.6.
 
-`route` and `reply_text` aren't in the automatic score. Judges check routing in the live round and read a sample of 10 replies per team.
+`route` and `reply_text` aren't in the automatic score. Judges check routing in the live round and read a sample of 10 replies per team. We also run automatic checks on all your replies and give the results to the judges: empty replies, replies in the wrong language, transaction IDs or RM amounts that aren't in the customer's evidence (the same check as `starter/check_reply.py`), and whether a refund reply states the refund amount.
 
 Score yourself on the training labels at any time:
 

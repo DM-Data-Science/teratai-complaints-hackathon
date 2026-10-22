@@ -178,7 +178,7 @@ An optional, separately judged award ("Best Ops Platform") for teams that turn t
 1. Fork this repo (one fork per team) and build in your fork.
 2. Run your workflow on all 750 complaints in `test_ids.csv`.
 3. Save `submissions/<team-name>/predictions.csv` with these columns: `complaint_id, category, matched_txn_id, outcome, refund_amount_myr, priority, reply_language, route, reply_text`. The format is in [`docs/scoring.md`](docs/scoring.md).
-4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork.
+4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork. Put your **code-freeze commit hash** (the last commit in your fork at 15:00) in the PR description: what you demo must run from that commit.
 
 Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
 
