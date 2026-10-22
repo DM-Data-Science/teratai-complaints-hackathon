@@ -107,14 +107,17 @@ A decision about the wrong transaction earns nothing, so finding the right trans
 
 ### The live round
 
-During your demo, a judge gives you 2 or 3 new complaints written for the event. Each one has the same fields as a row of `complaints.csv`. A made-up example of the format:
+During your demo, a judge gives you **3 new complaints**, one at a time. The customers and transactions they refer to are already in the data, and `received_at` is 30 Sep 2026, the last day of the data.
 
-```
-complaint_id,customer_id,received_at,channel,subject,text
-LIVE-07,CUS-01234,2026-09-30 10:15,App chat,,"Hi, I was charged twice at ShopLah Online today for RM89.90..."
-```
+**How you receive them.** For each complaint the judge sends you two files in the hackathon chat, with the same content:
+- `LIVE-xx.csv`: one row under the same header as `complaints.csv` (`complaint_id,customer_id,received_at,channel,subject,text`);
+- `LIVE-xx.json`: the same six fields as one JSON object.
 
-The customer and the transaction already exist in the data. `received_at` is 30 Sep 2026, the last day of the data. Your system must take the complaint in without code changes (for example, a file dropped into a watched folder or a POST to your API). It must process it on its own and show the case record with its evidence, the route and the reply. Cases that need approval must wait for a human to approve them.
+Use whichever suits your intake. [`examples/live_complaint_example.csv`](examples/live_complaint_example.csv) and [`.json`](examples/live_complaint_example.json) show the exact format (built from training complaint CMP-00244), so you can rehearse with them.
+
+**What you may do.** One operator action to feed it in: drop the file into your watched folder, upload it in your UI, POST the JSON to your API, or run one command such as `python ingest.py LIVE-xx.csv`. You may not edit your code, the complaint or the agent's decision.
+
+**What we watch.** The complaint is processed on its own. You then show the case record: the matched transaction, the evidence, the decision, the route and the reply. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue.
 
 ## Schedule
 
@@ -198,7 +201,7 @@ If this repo changes before the event (clarifications only, never the data), syn
 
 Separately, there is an optional **Best Ops Platform** award for teams that build a full staff app: role-based queues, two-tier approval and an audit trail ([`docs/bonus_platform.md`](docs/bonus_platform.md)). It is judged on its own and doesn't change the main ranking.
 
-**Do we need to build an API?** No. Your intake can be a watched folder, a queue, an API, or a command that takes a complaint file. The only requirement: in the live round you take one new complaint (same columns as `complaints.csv`), and your system processes it without code changes.
+**Do we need to build an API?** No. Your intake can be a watched folder, a queue, an API, or a command that takes a complaint file. In the live round you get each complaint as a one-row CSV and as JSON (see *The live round*), feed it in with one action, and your system processes it without code changes.
 
 **Do we need a chatbot UI?** No. This is a back-office tool for complaints officers, not a customer chatbot. Customers never talk to your agent; it drafts the reply an officer would send. You need a way to show three things:
 - the queues: auto-resolved, waiting for approval, fraud team;
@@ -218,6 +221,7 @@ A simple web page, a Streamlit or Gradio app, a CLI or a notebook all work for t
 ```
 data/          the CSVs (complaints, customers, accounts, transactions, ATM journal, policies, training labels, test IDs)
 docs/          data dictionary, scoring details, build guide, bonus ops platform
+examples/      the live-round complaint format (one CSV row and the same as JSON)
 starter/       evidence pack builder, reply checker, keyword baseline (Python, standard library only)
 scoring/       score.py: the scorer used for the leaderboard
 submissions/   one folder per team
