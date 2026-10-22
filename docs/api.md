@@ -111,7 +111,7 @@ Your own UI can call this endpoint for its Approve and Reject buttons. That way 
 
 ## Being reachable in the live round
 
-The organisers' laptop calls your API during your demo slot. Either:
+The organisers' laptop calls your API right after the 15:00 freeze (the hidden test) and again in your demo (the human gate), so keep it running from 15:00 until your demo ends and put its URL in your submission PR. Either:
 - run it on your laptop on the venue Wi-Fi, listening on all interfaces (for example `uvicorn app:app --host 0.0.0.0 --port 8000`), and give us `http://<your-laptop-ip>:8000`; or
 - put it behind a tunnel (ngrok, Cloudflare Tunnel) and give us that URL.
 

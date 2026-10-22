@@ -107,11 +107,11 @@ A decision about the wrong transaction earns nothing, so finding the right trans
 
 ### The live round
 
-Two parts, inside your 8-minute demo. Both go through your API ([`docs/api.md`](docs/api.md)); give us its URL when your slot starts.
+Two parts, both through your API ([`docs/api.md`](docs/api.md)). Put its URL in your submission PR and keep it running from the 15:00 freeze until your demo ends.
 
-**Hidden test (15 points, automatic).** Our script sends **20 complaints you have never seen** to your API, all at once, and scores the answers exactly like the leaderboard (score × 0.15). They are about customers and transactions already in the data, but they are written the way real customers write: typos, SMS short forms, emoji, mixed English and Malay. An agent tuned to the wording of `complaints.csv` will struggle; one that understands language won't. Each complaint carries its own `received_at`: use it, not today's date. Run the same script on yourself with training complaints any time: `python scoring/api_check.py http://localhost:8000`.
+**Hidden test (15 points, automatic).** Right after the 15:00 freeze, our script sends **20 complaints you have never seen** to your API, all at once, and scores the answers exactly like the leaderboard (score × 0.15). They are about customers and transactions already in the data, but they are written the way real customers write: typos, SMS short forms, emoji, mixed English and Malay. An agent tuned to the wording of `complaints.csv` will struggle; one that understands language won't. Each complaint carries its own `received_at`: use it, not today's date. Run the same script on yourself with training complaints any time: `python scoring/api_check.py http://localhost:8000`.
 
-**Human gate (10 points, judges).** We then send 3 more complaints, one at a time, and watch. The case appears on its own, and you show us the matched transaction, the evidence, the decision, the route, the reply and the self-check. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue. We also check this through the API: until it's approved, a case waiting for approval must show `case_state: awaiting_approval` and `sent: false`.
+**Human gate (10 points, judges).** In your demo, we send 3 more complaints, one at a time, and watch. The case appears on its own, and you show us the matched transaction, the evidence, the decision, the route, the reply and the self-check. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue. We also check this through the API: until it's approved, a case waiting for approval must show `case_state: awaiting_approval` and `sent: false`.
 
 Every live complaint is the six fields of a `complaints.csv` row as JSON. [`examples/live_complaint_example.json`](examples/live_complaint_example.json) is one (training complaint CMP-00244). The script's robustness probes and timings go to the judges as part of the engineering score.
 
@@ -136,10 +136,12 @@ Every live complaint is the six fields of a `complaints.csv` row as JSON. [`exam
 | 09:00 | Stand-ups, 5 minutes per team |
 | 12:00 | **Checkpoint 2:** the full workflow (decision, reply, approval and write-back) runs on 50 training complaints, your training score is posted, `scoring/api_check.py` passes against your API, and we confirm we can reach it from the organisers' laptop |
 | 13:00 | Lunch |
-| 15:00 | **Predictions due** and code freeze |
-| 15:15 | Demos: 8 minutes per team, including the live round |
-| 16:45 | Judges deliberate while the leaderboard is published |
-| 17:15 | Awards |
+| 15:00 | **Agent and API freeze:** predictions due (PR with commit hash and API URL); your API must be running |
+| 15:00–15:45 | Organisers score the predictions and run the hidden test on every team's API. Keep it running |
+| 15:00–16:30 | Keep working on your UI and the optional ops platform |
+| 16:30 | Demos: about 10 minutes per team (presentation, human gate, ops platform if you built one) |
+| 17:20 | Final judging |
+| 17:45 | Awards |
 
 The 750 test complaints are in `complaints.csv` from the start, so you can run them whenever you are ready. Don't leave a 750-complaint LLM run for the last hour.
 
@@ -170,14 +172,16 @@ More in [`docs/build_guide.md`](docs/build_guide.md): a reference workflow, wher
 
 ## Bonus: the ops platform
 
-An optional, separately judged award ("Best Ops Platform") for teams that turn the case record into a real back-office system: complaints officers and fraud analysts sign in to interfaces fitted to their job and see only their cases, a manager handles second-tier approval across both queues, and every action is written back and audited. It does not affect the main ranking or the leaderboard. See [`docs/bonus_platform.md`](docs/bonus_platform.md).
+An optional, separately judged award ("Best Ops Platform") for teams that turn the case record into a real back-office system: complaints officers and fraud analysts sign in to interfaces fitted to their job and see only their cases, a manager handles second-tier approval across both queues, and every action is written back and audited. It does not affect the main ranking or the leaderboard, and you can keep building it until 16:30 on Day 2. See [`docs/bonus_platform.md`](docs/bonus_platform.md).
 
 ## Submitting
 
 1. Fork this repo (one fork per team) and build in your fork.
 2. Run your workflow on all 750 complaints in `test_ids.csv`.
 3. Save `submissions/<team-name>/predictions.csv` with these columns: `complaint_id, category, matched_txn_id, outcome, refund_amount_myr, priority, reply_language, route, reply_text`. The format is in [`docs/scoring.md`](docs/scoring.md).
-4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork. Put your **code-freeze commit hash** (the last commit in your fork at 15:00) in the PR description: what you demo must run from that commit.
+4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork. In the PR description put your **freeze commit hash** (the last commit in your fork at 15:00) and your **API URL**.
+
+15:00 freezes the agent and its API: we take your leaderboard and hidden-test scores right after, so later changes to the agent don't count. You can keep working on your UI and the optional ops platform until 16:30, then demo.
 
 Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
 
@@ -194,7 +198,7 @@ If this repo changes before the event (clarifications only, never the data), syn
 
 **How will our agent be evaluated?** In four parts (details under *Scoring and judging*):
 1. **Accuracy (30%):** we score your `predictions.csv` for the 750 test complaints automatically.
-2. **Live round (25%):** in your demo, our script sends 20 unseen, messily written complaints to your API and scores them (15), and judges watch 3 more end to end to check the approval and fraud handling (10).
+2. **Live round (25%):** right after the 15:00 freeze, our script sends 20 unseen, messily written complaints to your API and scores them (15); in your demo, judges watch 3 more end to end to check the approval and fraud handling (10).
 3. **Replies and demo (25%):** judges read your replies to the same 10 test complaints as every other team, and score the demo.
 4. **Engineering (20%):** you walk the judges through how it's built.
 
