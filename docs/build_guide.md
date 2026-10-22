@@ -23,6 +23,60 @@ new complaint ──► 1. UNDERSTAND (LLM) ──► 2. FIND THE TRANSACTION (c
 
 Steps 2, 3 and 5 are deterministic: you can test them against `labels_train.csv` without calling an LLM. That's where most of the points are.
 
+## Live-round intake: getting one complaint into your agent
+
+In the live round you receive each complaint as `LIVE-xx.csv` (one row, same header as `complaints.csv`) and `LIVE-xx.json` (the same six fields). Whatever intake you choose, it does the same thing: read the six fields, then call your agent. Your agent uses `customer_id` to look up that customer's accounts and transactions in the data, exactly as it does for the batch. Pick one of these and rehearse with `examples/live_complaint_example.csv`.
+
+**Read either file format:**
+
+```python
+import csv, json
+from pathlib import Path
+
+def read_complaint(path: Path) -> dict:
+    if path.suffix == ".json":
+        return json.loads(path.read_text(encoding="utf-8"))
+    with open(path, newline="", encoding="utf-8") as fh:
+        return next(csv.DictReader(fh))
+```
+
+**A watched folder** (drag the file into `inbox/`):
+
+```python
+import time
+
+INBOX = Path("inbox"); DONE = INBOX / "done"
+DONE.mkdir(parents=True, exist_ok=True)
+while True:
+    for path in sorted(INBOX.iterdir()):
+        if path.is_file() and path.suffix in (".csv", ".json"):
+            handle_complaint(read_complaint(path))   # your agent
+            path.rename(DONE / path.name)
+    time.sleep(2)
+```
+
+**A command** (`python ingest.py LIVE-01.csv`):
+
+```python
+import sys
+handle_complaint(read_complaint(Path(sys.argv[1])))
+```
+
+**An API** (FastAPI; run `uvicorn intake:app`, then `curl -X POST http://localhost:8000/complaints -H "Content-Type: application/json" -d @LIVE-01.json`; in Windows PowerShell type `curl.exe`):
+
+```python
+from fastapi import FastAPI
+app = FastAPI()
+
+@app.post("/complaints")
+def new_complaint(complaint: dict):
+    return handle_complaint(complaint)   # or queue it and return the case ID
+```
+
+**An upload button** in your app (for example Streamlit's `st.file_uploader`) works too.
+
+Whichever you pick, the same code path should handle the 750 test complaints, so the live round tests the system you scored.
+
 ## Where to use the LLM and where to use code
 
 | Task | Use | Why |

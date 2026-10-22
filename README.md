@@ -113,7 +113,7 @@ During your demo, a judge gives you **3 new complaints**, one at a time. The cus
 - `LIVE-xx.csv`: one row under the same header as `complaints.csv` (`complaint_id,customer_id,received_at,channel,subject,text`);
 - `LIVE-xx.json`: the same six fields as one JSON object.
 
-Use whichever suits your intake. [`examples/live_complaint_example.csv`](examples/live_complaint_example.csv) and [`.json`](examples/live_complaint_example.json) show the exact format (built from training complaint CMP-00244), so you can rehearse with them.
+Use whichever suits your intake. [`examples/live_complaint_example.csv`](examples/live_complaint_example.csv) and [`.json`](examples/live_complaint_example.json) show the exact format (built from training complaint CMP-00244), so you can rehearse with them. Code for a watched folder, a command or an API is in [`docs/build_guide.md`](docs/build_guide.md#live-round-intake-getting-one-complaint-into-your-agent).
 
 **What you may do.** One operator action to feed it in: drop the file into your watched folder, upload it in your UI, POST the JSON to your API, or run one command such as `python ingest.py LIVE-xx.csv`. You may not edit your code, the complaint or the agent's decision.
 
