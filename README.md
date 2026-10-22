@@ -196,6 +196,8 @@ If this repo changes before the event (clarifications only, never the data), syn
 3. **Replies and demo (25%):** judges read your replies to the same 10 test complaints as every other team, and score the demo.
 4. **Engineering (20%):** you walk the judges through how it's built.
 
+Separately, there is an optional **Best Ops Platform** award for teams that build a full staff app: role-based queues, two-tier approval and an audit trail ([`docs/bonus_platform.md`](docs/bonus_platform.md)). It is judged on its own and doesn't change the main ranking.
+
 **Do we need to build an API?** No. Your intake can be a watched folder, a queue, an API, or a command that takes a complaint file. The only requirement: in the live round you take one new complaint (same columns as `complaints.csv`), and your system processes it without code changes.
 
 **Do we need a chatbot UI?** No. This is a back-office tool for complaints officers, not a customer chatbot. Customers never talk to your agent; it drafts the reply an officer would send. You need a way to show three things:
@@ -203,9 +205,9 @@ If this repo changes before the event (clarifications only, never the data), syn
 - a case: the complaint, the matched transaction, the evidence, the decision, the reply and the self-check result;
 - the approval step.
 
-A simple web page, a Streamlit or Gradio app, a CLI or a notebook all work. Judges score clarity and whether a bank could use it, not visual polish.
+A simple web page, a Streamlit or Gradio app, a CLI or a notebook all work for the main ranking. Judges score clarity and whether a bank could use it, not visual polish. A fuller staff app is what the optional Best Ops Platform award is for.
 
-**Do we need user accounts or roles (RBAC) for managers?** No logins or roles. "Human in charge" means a case that needs approval waits until someone approves it in your system. An approve or reject action that records the approver's name is enough. Don't spend hackathon time on authentication.
+**Do we need user accounts or roles (RBAC) for managers?** Not for the main ranking. There, "human in charge" means a case that needs approval waits until someone approves it in your system, and an approve or reject action that records the approver's name is enough. Roles (complaints officer, fraud analyst, manager), seeded users and second-tier approval by the manager belong to the optional **Best Ops Platform** award ([`docs/bonus_platform.md`](docs/bonus_platform.md)). Even there, seeded users with a `role` column are enough: don't build real authentication. Get the core agent working first.
 
 **Do we actually send replies or refunds?** No. Put approved replies in an outbox (a file or a table) and record the refund as a decision. Nothing leaves your system.
 
