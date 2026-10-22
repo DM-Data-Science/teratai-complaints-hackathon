@@ -109,7 +109,7 @@ A decision about the wrong transaction earns nothing, so finding the right trans
 
 During your demo, a judge gives you **3 new complaints**, one at a time. The customers and transactions they refer to are already in the data, and `received_at` is 30 Sep 2026, the last day of the data.
 
-**How you receive them.** For each complaint the judge sends you two files in the hackathon chat, with the same content:
+**How you receive them.** For each complaint the judge shares two files with you, with the same content (we post them in the event's group chat; that is only how the file reaches you, not your system's UI):
 - `LIVE-xx.csv`: one row under the same header as `complaints.csv` (`complaint_id,customer_id,received_at,channel,subject,text`);
 - `LIVE-xx.json`: the same six fields as one JSON object.
 
