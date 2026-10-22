@@ -188,6 +188,29 @@ If this repo changes before the event (clarifications only, never the data), syn
 - **Data stays synthetic.** Don't add real customer data, and keep API keys out of the repo.
 - **Ask early.** If a rule is unclear, [open an issue](https://github.com/DM-Data-Science/teratai-complaints-hackathon/issues) in this repo. Every team can see the answers.
 
+## FAQ
+
+**How will our agent be evaluated?** In four parts (details under *Scoring and judging*):
+1. **Accuracy (30%):** we score your `predictions.csv` for the 750 test complaints automatically.
+2. **Live round (25%):** in your demo, a judge gives you 3 new complaints and watches your system handle each one end to end.
+3. **Replies and demo (25%):** judges read your replies to the same 10 test complaints as every other team, and score the demo.
+4. **Engineering (20%):** you walk the judges through how it's built.
+
+**Do we need to build an API?** No. Your intake can be a watched folder, a queue, an API, or a command that takes a complaint file. The only requirement: in the live round you take one new complaint (same columns as `complaints.csv`), and your system processes it without code changes.
+
+**Do we need a chatbot UI?** No. This is a back-office tool for complaints officers, not a customer chatbot. Customers never talk to your agent; it drafts the reply an officer would send. You need a way to show three things:
+- the queues: auto-resolved, waiting for approval, fraud team;
+- a case: the complaint, the matched transaction, the evidence, the decision, the reply and the self-check result;
+- the approval step.
+
+A simple web page, a Streamlit or Gradio app, a CLI or a notebook all work. Judges score clarity and whether a bank could use it, not visual polish.
+
+**Do we need user accounts or roles (RBAC) for managers?** No logins or roles. "Human in charge" means a case that needs approval waits until someone approves it in your system. An approve or reject action that records the approver's name is enough. Don't spend hackathon time on authentication.
+
+**Do we actually send replies or refunds?** No. Put approved replies in an outbox (a file or a table) and record the refund as a decision. Nothing leaves your system.
+
+**Can the policy rules be plain code?** Yes, and that's the recommended design. The LLM reads the complaint and writes the reply; code finds the transaction, applies `complaint_policy.csv` and works out the refund. An agent that leaves the money to the LLM will lose points on accuracy.
+
 ## Repo layout
 
 ```
