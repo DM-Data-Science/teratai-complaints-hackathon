@@ -53,7 +53,7 @@ The full decision rules are in [`data/complaint_policy.csv`](data/complaint_poli
 
 This is an agent hackathon, not a classification contest. A model that only labels CSV rows won't win. Your solution must:
 
-1. **React to events.** A new complaint starts the workflow on its own (a watched folder, a queue or an API, your choice). In the live round, your intake must accept one new complaint in the format described under *The live round* below.
+1. **Expose the API.** Your agent runs as a small service with a fixed API ([`docs/api.md`](docs/api.md)): a complaint POSTed to it starts the workflow on its own, and the decision can be read back. That is how the live round sends you complaints.
 2. **Use tools.** It looks things up through tools or functions (customer, accounts, transactions, ATM journal, fee schedule). It does not paste whole tables into a prompt.
 3. **Act.** It writes a case record: the decision, the evidence it used and the drafted reply.
 4. **Keep a human in charge.** Cases that need approval wait in an approval queue, and fraud cases land in a fraud queue. Nothing that needs approval goes out without it.
@@ -101,23 +101,19 @@ A decision about the wrong transaction earns nothing, so finding the right trans
 | Weight | Criterion | How it is judged |
 |---|---|---|
 | 30% | Accuracy | Leaderboard score on the test set |
-| 25% | Agent design and guardrails | **Live round**: judges type new complaints into your system during the demo. We check the routing and approval step, that it reacts on its own, and that its self-check catches bad replies |
+| 25% | Live round | **Hidden test (15):** our script sends 20 unseen, messily written complaints to your API and scores the answers automatically. **Human gate (10):** judges watch 3 more complaints end to end and check that approvals hold and fraud cases reach the fraud queue |
 | 25% | Business value and demo | Reply quality (tone, correct language, no invented facts; judges read 10 of your replies), clarity, and whether a bank would use it |
 | 20% | Engineering | Architecture, observability (can you show why it decided what it did?), cost and speed per complaint |
 
 ### The live round
 
-During your demo, a judge gives you **3 new complaints**, one at a time. The customers and transactions they refer to are already in the data, and `received_at` is 30 Sep 2026, the last day of the data.
+Two parts, inside your 8-minute demo. Both go through your API ([`docs/api.md`](docs/api.md)); give us its URL when your slot starts.
 
-**How you receive them.** For each complaint the judge shares two files with you, with the same content (we post them in the event's group chat; that is only how the file reaches you, not your system's UI):
-- `LIVE-xx.csv`: one row under the same header as `complaints.csv` (`complaint_id,customer_id,received_at,channel,subject,text`);
-- `LIVE-xx.json`: the same six fields as one JSON object.
+**Hidden test (15 points, automatic).** Our script sends **20 complaints you have never seen** to your API, all at once, and scores the answers exactly like the leaderboard (score × 0.15). They are about customers and transactions already in the data, but they are written the way real customers write: typos, SMS short forms, emoji, mixed English and Malay. An agent tuned to the wording of `complaints.csv` will struggle; one that understands language won't. Each complaint carries its own `received_at`: use it, not today's date. Run the same script on yourself with training complaints any time: `python scoring/api_check.py http://localhost:8000`.
 
-Use whichever suits your intake. [`examples/live_complaint_example.csv`](examples/live_complaint_example.csv) and [`.json`](examples/live_complaint_example.json) show the exact format (built from training complaint CMP-00244), so you can rehearse with them. Code for a watched folder, a command or an API is in [`docs/build_guide.md`](docs/build_guide.md#live-round-intake-getting-one-complaint-into-your-agent).
+**Human gate (10 points, judges).** We then send 3 more complaints, one at a time, and watch. The case appears on its own, and you show us the matched transaction, the evidence, the decision, the route, the reply and the self-check. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue.
 
-**What you may do.** One operator action to feed it in: drop the file into your watched folder, upload it in your UI, POST the JSON to your API, or run one command such as `python ingest.py LIVE-xx.csv`. You may not edit your code, the complaint or the agent's decision.
-
-**What we watch.** The complaint is processed on its own. You then show the case record: the matched transaction, the evidence, the decision, the route and the reply. A case that needs approval must wait until someone approves it in your system, and a fraud case must land in the fraud queue.
+Every live complaint is the six fields of a `complaints.csv` row as JSON. [`examples/live_complaint_example.json`](examples/live_complaint_example.json) is one (training complaint CMP-00244). The script's robustness probes and timings go to the judges as part of the engineering score.
 
 ## Schedule
 
@@ -138,7 +134,7 @@ Use whichever suits your intake. [`examples/live_complaint_example.csv`](example
 | Time | |
 |---|---|
 | 09:00 | Stand-ups, 5 minutes per team |
-| 12:00 | **Checkpoint 2:** the full workflow (decision, reply, approval and write-back) runs on 50 training complaints, and your training score is posted |
+| 12:00 | **Checkpoint 2:** the full workflow (decision, reply, approval and write-back) runs on 50 training complaints, your training score is posted, `scoring/api_check.py` passes against your API, and we confirm we can reach it from the organisers' laptop |
 | 13:00 | Lunch |
 | 15:00 | **Predictions due** and code freeze |
 | 15:15 | Demos: 8 minutes per team, including the live round |
@@ -165,6 +161,9 @@ python scoring/score.py submissions/baseline/predictions.csv data/labels_train.c
 # 3. Check drafted replies against the evidence (the self-check every agent needs)
 python starter/check_reply.py CMP-00244 "We have refunded RM550.00 for transaction TXN-0088211."   # VERIFIED
 python starter/check_reply.py CMP-00244 "We have refunded RM600.00 for transaction TXN-0088299."   # FLAGGED: invented ID and amount
+
+# 4. Once your API is running, test it the way the live round will
+python scoring/api_check.py http://localhost:8000
 ```
 
 More in [`docs/build_guide.md`](docs/build_guide.md): a reference workflow, where to use the LLM and where to use code, and common pitfalls.
@@ -195,13 +194,15 @@ If this repo changes before the event (clarifications only, never the data), syn
 
 **How will our agent be evaluated?** In four parts (details under *Scoring and judging*):
 1. **Accuracy (30%):** we score your `predictions.csv` for the 750 test complaints automatically.
-2. **Live round (25%):** in your demo, a judge gives you 3 new complaints and watches your system handle each one end to end.
+2. **Live round (25%):** in your demo, our script sends 20 unseen, messily written complaints to your API and scores them (15), and judges watch 3 more end to end to check the approval and fraud handling (10).
 3. **Replies and demo (25%):** judges read your replies to the same 10 test complaints as every other team, and score the demo.
 4. **Engineering (20%):** you walk the judges through how it's built.
 
 Separately, there is an optional **Best Ops Platform** award for teams that build a full staff app: role-based queues, two-tier approval and an audit trail ([`docs/bonus_platform.md`](docs/bonus_platform.md)). It is judged on its own and doesn't change the main ranking.
 
-**Do we need to build an API?** No. Your intake can be a watched folder, a queue, an API, or a command that takes a complaint file. In the live round you get each complaint as a one-row CSV and as JSON (see *The live round*), feed it in with one action, and your system processes it without code changes.
+**Do we need to build an API?** Yes, a small one with a fixed contract: `POST /complaints`, `GET /cases/{complaint_id}` and `GET /health` ([`docs/api.md`](docs/api.md)). It's about 30 lines with FastAPI ([`docs/build_guide.md`](docs/build_guide.md#the-api)). It's how the live round sends you complaints, so every team is tested the same way. Check yours with `python scoring/api_check.py`.
+
+**Do we need an API gateway, keys or rate limits?** No. Our calls carry no credentials. We do check that bad input gets a `4xx` instead of a crash, that posting the same complaint twice doesn't create a second case, and how long each complaint takes; those results feed the engineering score.
 
 **Do we need a chatbot UI?** No. This is a back-office tool for complaints officers, not a customer chatbot. Customers never talk to your agent; it drafts the reply an officer would send. You need a way to show three things:
 - the queues: auto-resolved, waiting for approval, fraud team;
@@ -220,9 +221,9 @@ A simple web page, a Streamlit or Gradio app, a CLI or a notebook all work for t
 
 ```
 data/          the CSVs (complaints, customers, accounts, transactions, ATM journal, policies, training labels, test IDs)
-docs/          data dictionary, scoring details, build guide, bonus ops platform
-examples/      the live-round complaint format (one CSV row and the same as JSON)
+docs/          data dictionary, scoring details, API contract, build guide, bonus ops platform
+examples/      one complaint in the API's JSON format (and as a CSV row)
 starter/       evidence pack builder, reply checker, keyword baseline (Python, standard library only)
-scoring/       score.py: the scorer used for the leaderboard
+scoring/       score.py (the leaderboard scorer) and api_check.py (tests your API the way the live round does)
 submissions/   one folder per team
 ```

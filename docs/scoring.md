@@ -55,10 +55,14 @@ python scoring/score.py submissions/<team>/predictions.csv data/labels_train.csv
 | Weight | Criterion |
 |---|---|
 | 30% | Leaderboard score on the test set |
-| 25% | Agent design and guardrails, checked in the live round: routing and approvals, reacting to new complaints on its own, the self-check catching bad replies |
+| 25% | Live round: **hidden test (15)**, 20 unseen complaints sent to your API and scored automatically (score × 0.15); **human gate (10)**, judges watch 3 complaints end to end (routing, approvals that hold, fraud queue, self-check) |
 | 25% | Business value and demo: reply quality (tone, correct language, no invented facts), clarity, would a bank use it |
 | 20% | Engineering: architecture, observability (show why it decided), cost and speed per complaint |
 
 ### The live round
 
-During your demo the judges share 3 new complaints with you, one at a time (posted in the event's group chat), each as a one-row CSV (same header as `complaints.csv`) and as a JSON object with the same fields (IDs `LIVE-01`…, `received_at` on 30 Sep 2026); see `examples/` for the format. The customers and transactions they refer to are already in the data. You feed each one in with one operator action (drop, upload, POST or one command), with no code changes. We look for the right decision and the right route. Cases that need approval must wait for approval, and fraud cases must land with the fraud team. The reply must pass your own self-check.
+Both parts go through your API ([`api.md`](api.md)).
+
+**Hidden test (15 points).** `scoring/api_check.py` sends 20 complaints you haven't seen to your API, all at once, and scores them with the same per-complaint points and critical-error rule as the leaderboard; your hidden-test points are that score × 0.15. The complaints are about customers and transactions already in the data, written the way real customers write (typos, SMS short forms, emoji, mixed language), each with its own `received_at`. A complaint that isn't `done` within 120 seconds scores 0. The script also runs five robustness probes (health check, unknown case, missing text, unknown customer, the same complaint twice) and times each complaint; those results go to the judges for the engineering score. Run it on yourself: `python scoring/api_check.py http://localhost:8000`.
+
+**Human gate (10 points).** The judges send 3 more complaints, one at a time, and tick a checklist for each: the case appears on its own; the right transaction, decision and refund; the right route; a case needing approval waits until someone approves it in your system; a fraud case lands in the fraud queue; the reply is in the right language and consistent with the decision; the self-check result is visible. Your points are the share of checks passed × 10.

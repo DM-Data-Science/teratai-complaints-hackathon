@@ -23,59 +23,67 @@ new complaint ──► 1. UNDERSTAND (LLM) ──► 2. FIND THE TRANSACTION (c
 
 Steps 2, 3 and 5 are deterministic: you can test them against `labels_train.csv` without calling an LLM. That's where most of the points are.
 
-## Live-round intake: getting one complaint into your agent
+## The API
 
-In the live round you receive each complaint as `LIVE-xx.csv` (one row, same header as `complaints.csv`) and `LIVE-xx.json` (the same six fields). Whatever intake you choose, it does the same thing: read the six fields, then call your agent. Your agent uses `customer_id` to look up that customer's accounts and transactions in the data, exactly as it does for the batch. Pick one of these and rehearse with `examples/live_complaint_example.csv`.
-
-**Read either file format:**
+The live round reaches your agent through the API in [`api.md`](api.md). The simplest shape: accept the complaint, decide in the background, and serve the case. This FastAPI version is a working starting point; plug your agent in as `handle_complaint`:
 
 ```python
-import csv, json
-from pathlib import Path
+# app.py, run with: uvicorn app:app --host 0.0.0.0 --port 8000
+from concurrent.futures import ThreadPoolExecutor
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
-def read_complaint(path: Path) -> dict:
-    if path.suffix == ".json":
-        return json.loads(path.read_text(encoding="utf-8"))
-    with open(path, newline="", encoding="utf-8") as fh:
-        return next(csv.DictReader(fh))
-```
-
-**A watched folder** (drag the file into `inbox/`):
-
-```python
-import time
-
-INBOX = Path("inbox"); DONE = INBOX / "done"
-DONE.mkdir(parents=True, exist_ok=True)
-while True:
-    for path in sorted(INBOX.iterdir()):
-        if path.is_file() and path.suffix in (".csv", ".json"):
-            handle_complaint(read_complaint(path))   # your agent
-            path.rename(DONE / path.name)
-    time.sleep(2)
-```
-
-**A command** (`python ingest.py LIVE-01.csv`):
-
-```python
-import sys
-handle_complaint(read_complaint(Path(sys.argv[1])))
-```
-
-**An API** (FastAPI; run `uvicorn intake:app`, then `curl -X POST http://localhost:8000/complaints -H "Content-Type: application/json" -d @LIVE-01.json`; in Windows PowerShell type `curl.exe`):
-
-```python
-from fastapi import FastAPI
 app = FastAPI()
+CASES: dict[str, dict] = {}            # use a database in your real build
+POOL = ThreadPoolExecutor(max_workers=8)
 
-@app.post("/complaints")
-def new_complaint(complaint: dict):
-    return handle_complaint(complaint)   # or queue it and return the case ID
+
+class Complaint(BaseModel):
+    complaint_id: str
+    customer_id: str
+    received_at: str
+    channel: str = ""
+    subject: str = ""
+    text: str                           # missing text: FastAPI answers 422 for you
+
+
+def work(c: Complaint):
+    try:
+        decision = handle_complaint(c.model_dump())   # your agent: returns category, matched_txn_id, outcome, ...
+        CASES[c.complaint_id] = {"complaint_id": c.complaint_id, "status": "done", **decision}
+    except Exception as e:
+        CASES[c.complaint_id] = {"complaint_id": c.complaint_id, "status": "error", "error": str(e)}
+
+
+@app.post("/complaints", status_code=202)
+def new_complaint(c: Complaint):
+    if c.complaint_id in CASES:                    # the same complaint again: no second case
+        return {"complaint_id": c.complaint_id, "status": CASES[c.complaint_id]["status"]}
+    if not c.text.strip():
+        raise HTTPException(422, "text is empty")
+    CASES[c.complaint_id] = {"complaint_id": c.complaint_id, "status": "processing"}
+    POOL.submit(work, c)
+    return {"complaint_id": c.complaint_id, "status": "processing"}
+
+
+@app.get("/cases/{complaint_id}")
+def get_case(complaint_id: str):
+    if complaint_id not in CASES:
+        raise HTTPException(404, "unknown complaint")
+    return CASES[complaint_id]
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
 ```
 
-**An upload button** in your app (for example Streamlit's `st.file_uploader`) works too.
+Use the same `handle_complaint` for the 750 test complaints (read `complaints.csv` and call it for each `test_ids.csv` row), so the live round tests the system you scored. Then check the service:
 
-Whichever you pick, the same code path should handle the 750 test complaints, so the live round tests the system you scored.
+```bash
+uvicorn app:app --host 0.0.0.0 --port 8000
+python scoring/api_check.py http://localhost:8000
+```
 
 ## Where to use the LLM and where to use code
 
