@@ -140,9 +140,9 @@ Every live complaint is the six fields of a `complaints.csv` row as JSON. [`exam
 | 15:00 | **Agent and API freeze:** predictions due (PR with commit hash and API URL); your API must be running |
 | 15:00–15:45 | Organisers score the predictions and run the hidden test on every team's API. Keep it running |
 | 15:00–16:30 | Keep working on your UI and the optional ops platform. 16:30 is the end of building for every team, whatever your demo slot |
-| 16:30–18:30 | Demos, one team at a time: 20 minutes plus 10 minutes of questions each (see [Your demo](#your-demo)). We post the order on the day; the next team sets up during the previous team's questions |
-| 18:30 | Final judging |
-| 18:50 | Awards |
+| 16:30–17:50 | Demos, one team at a time: 15 minutes plus 5 minutes of questions each (see [Your demo](#your-demo)). We post the order on the day; the next team sets up during the previous team's questions |
+| 17:50 | Final judging |
+| 18:10 | Awards |
 
 The 750 test complaints are in `complaints.csv` from the start, so you can run them whenever you are ready. Don't leave a 750-complaint LLM run for the last hour.
 
@@ -204,20 +204,21 @@ If this repo changes before the event (clarifications only, never the data), syn
 
 ## Your demo
 
-20 minutes to show, then 10 minutes of questions, from your own laptop with your API running on the venue network. Slides are optional: one diagram and live cases beat a long deck.
+15 minutes to show, then 5 minutes of questions, from your own laptop with your API running on the venue network. Slides are optional: one diagram and live cases beat a long deck. We keep time strictly.
 
 | Minutes | Show and tell | What the judges score |
 |---|---|---|
-| 0–5 | **The problem and your design.** One diagram of how your main pipeline is orchestrated, from a complaint arriving to the reply going out: the steps in order, what the LLM does (reading the complaint, writing the reply), what code does (finding the transaction, applying the policy, working out the refund), and why you split it that way. Then your numbers: your training score from `scoring/score.py`, time and cost per complaint, and one case your agent gets wrong and why. | Presentation, engineering |
-| 5–12 | **Human gate, live.** We send 3 new complaints to your API, one at a time. For each one, without touching your code: the case appears on its own, and you show the matched transaction and its evidence, the decision and refund, the route and queue, the reply and the self-check result. Leave the approval case waiting, show that the customer hasn't received anything, then approve it in your UI. Show the fraud case in the fraud queue. | Human gate (10 points) |
-| 12–17 | **Your back office.** Built the ops platform? Drive the three cases in [`docs/bonus_platform.md`](docs/bonus_platform.md#what-to-show) and show the audit log and the numbers. Didn't? Show how an officer works through the queue: the case view with its evidence, approvals, and the numbers a manager would watch (volumes, time per case, share auto-resolved). | Demo and business value; ops platform (25 points) if built |
-| 17–20 | **One decision in your code.** Trace a case from complaint to reply: where the transaction is found, where the refund is worked out, where the self-check runs, and what happens when nothing matches. | Engineering |
-| 20–30 | **Questions.** Every team gets the three below, plus questions on your own design (how the refund is worked out, what happens when the LLM gets it wrong, what one complaint costs). | Presentation, engineering, ops platform |
+| 0–4 | **Your pipeline.** One diagram of how your main pipeline is orchestrated, from a complaint arriving to the reply going out: the steps in order, what the LLM does (reading the complaint, writing the reply), what code does (finding the transaction, applying the policy, working out the refund), and why you split it that way. Your numbers: training score from `scoring/score.py`, time and cost per complaint, one case your agent gets wrong and why. And **question 1** below: how it scales. | Presentation, engineering |
+| 4–11 | **Human gate, live.** We send 3 new complaints to your API, one at a time. For each one, without touching your code: the case appears on its own, and you show the matched transaction and its evidence, the decision and refund, the route and queue, the reply and the self-check result. Leave the approval case waiting, show that the customer hasn't received anything, then approve it in your UI. Show the fraud case in the fraud queue. | Human gate (10 points) |
+| 11–15 | **Your back office and its users.** Built the ops platform? Drive the three cases in [`docs/bonus_platform.md`](docs/bonus_platform.md#what-to-show), show the audit log and the numbers, and answer **questions 2 and 3** as you go. Didn't? Show how an officer works through the queue (the case view with its evidence, approvals, the numbers a manager would watch) and answer **question 2**. | Demo and business value; ops platform (25 points) if built; engineering |
+| 15–20 | **Questions.** Follow-ups on what you showed; we may ask you to open your code and show where one decision is made. | Presentation, engineering |
 
-**The three questions every team gets** (prepare short answers; you can also cover them in your 20 minutes):
+**The three questions to answer in your 15 minutes:**
 1. **Scale.** Can your endpoint and app scale? How do you make sure of it, or plan for it, and how do you test it?
 2. **Users.** How did you design the user system: who the users are, their roles, and what each can see and do? (No ops platform? Tell us how you would.)
 3. **Ops platform.** Why did you design it the way you did: what is shown, and what is each user's journey through it? (No ops platform? Skip this one.)
+
+Judges also read your code at your freeze commit for the engineering score, so you don't need to walk through it.
 
 **Before your slot:** your API is running and reachable from another laptop, your UI is open, the laptop is on power with sleep turned off, and screen sharing works. Don't change code during the demo: the agent was frozen at 15:00.
 
