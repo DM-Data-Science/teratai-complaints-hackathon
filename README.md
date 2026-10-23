@@ -177,13 +177,22 @@ An optional, separately scored criterion in the final ranking ("Best Ops Platfor
 
 ## Submitting
 
-1. Fork this repo (one fork per team) and build in your fork.
-2. Run your workflow on all 750 complaints in `test_ids.csv`.
-3. Save `submissions/<team-name>/predictions.csv` with these columns: `complaint_id, category, matched_txn_id, outcome, refund_amount_myr, priority, reply_language, route, reply_text`. The format is in [`docs/scoring.md`](docs/scoring.md).
-4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork. In the PR description put your **freeze commit hash** (the last commit in your fork at 15:00) and your **API URL**.
+Build wherever suits your team: a fork of this repo, or your own repo (new or existing, public or private, on GitHub or elsewhere). Submitting works the same way for both.
+
+1. Run your workflow on all 750 complaints in `test_ids.csv`.
+2. Save `submissions/<team-name>/predictions.csv` with these columns: `complaint_id, category, matched_txn_id, outcome, refund_amount_myr, priority, reply_language, route, reply_text`. The format is in [`docs/scoring.md`](docs/scoring.md).
+3. Before **15:00 on Day 2**, open a pull request to this repo titled `Submission: <team-name>` that adds only that file. In the PR description put:
+   - your **repo link**;
+   - your **freeze commit hash**: the last commit in the repo with your code at 15:00;
+   - your **API URL**.
+
+   **Built in a fork?** Open the PR from your fork. **Built in your own repo?** Fork this repo just for the submission (one fork per team), add the file there (GitHub's **Add file → Upload files** works in the browser) and open the PR from that fork. Your code stays in your own repo.
+4. Judges read your code for the engineering score. If your repo is private, give the organisers read access before 15:00, or be ready to walk us through the code in your demo.
+
+Can't open a pull request? Send the organisers the same four things (`predictions.csv`, repo link, freeze commit hash, API URL) before 15:00 and we'll load them ourselves.
 
 **Before 15:00 on Day 2, check:**
-- the PR is open with `predictions.csv` for all 750 test complaints, your freeze commit hash and your API URL;
+- the PR is open (or the organisers have your file) with `predictions.csv` for all 750 test complaints, your repo link, freeze commit hash and API URL;
 - your API is running on the venue network and a teammate's laptop can reach it (`python scoring/api_check.py http://<your-ip>:<port>` passes);
 - the laptop running it stays plugged in and awake until your demo ends (turn sleep off), with enough LLM quota for 20 complaints at once.
 
@@ -191,7 +200,7 @@ An optional, separately scored criterion in the final ranking ("Best Ops Platfor
 
 Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
 
-If this repo changes before the event (clarifications only, never the data), sync your fork with GitHub's **Sync fork** button.
+If this repo changes before the event (clarifications only, never the data), sync your fork with GitHub's **Sync fork** button, or pull the change into your own repo.
 
 ## Ground rules
 
@@ -227,6 +236,8 @@ If this repo changes before the event (clarifications only, never the data), syn
 A simple web page, a Streamlit or Gradio app, a CLI or a notebook all work for the 125 points outside the ops platform. Judges score clarity and whether a bank could use it, not visual polish. A fuller staff app is what the optional 25-point ops-platform criterion rewards.
 
 **Do we need user accounts or roles (RBAC) for managers?** Not for the 125 points outside the ops platform. There, "human in charge" just means a case that needs approval waits until someone approves it in your system, and an approve or reject action that records the approver's name is enough. Roles (complaints officer, fraud analyst, manager), seeded users and second-tier approval by the manager are part of the 25-point ops-platform criterion ([`docs/bonus_platform.md`](docs/bonus_platform.md)); the engineering criterion also looks at how cleanly you handle RBAC if you build it. Even so, seeded users with a `role` column are plenty — don't build real authentication. Get the core agent working first.
+
+**Can we use our own repo instead of forking?** Yes. Build anywhere, public or private. To submit, fork this repo just for the pull request with your `predictions.csv`, and put your repo link and freeze commit hash in it (see *Submitting*). If your repo is private, give the organisers read access or show us the code in your demo.
 
 **Do we actually send replies or refunds?** No. Put approved replies in an outbox (a file or a table) and record the refund as a decision. Nothing leaves your system.
 
