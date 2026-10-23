@@ -140,9 +140,9 @@ Every live complaint is the six fields of a `complaints.csv` row as JSON. [`exam
 | 15:00 | **Agent and API freeze:** predictions due (PR with commit hash and API URL); your API must be running |
 | 15:00–15:45 | Organisers score the predictions and run the hidden test on every team's API. Keep it running |
 | 15:00–16:30 | Keep working on your UI and the optional ops platform |
-| 16:30 | Demos: about 10 minutes per team (presentation, human gate, ops platform if you built one) |
-| 17:20 | Final judging |
-| 17:45 | Awards |
+| 16:30 | Demos: 20 minutes per team plus 10 minutes of questions, in an order we post on the day (see [Your demo](#your-demo)) |
+| After the last demo | Final judging |
+| Then | Awards |
 
 The 750 test complaints are in `complaints.csv` from the start, so you can run them whenever you are ready. Don't leave a 750-complaint LLM run for the last hour.
 
@@ -201,6 +201,22 @@ Can't open a pull request? Send the organisers the same four things (`prediction
 Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
 
 If this repo changes before the event (clarifications only, never the data), sync your fork with GitHub's **Sync fork** button, or pull the change into your own repo.
+
+## Your demo
+
+20 minutes to show, then 10 minutes of questions, from your own laptop with your API running on the venue network. Slides are optional: one diagram and live cases beat a long deck.
+
+| Minutes | Show and tell | What the judges score |
+|---|---|---|
+| 0–5 | **The problem and your design.** One diagram: what the LLM does (reading the complaint, writing the reply), what code does (finding the transaction, applying the policy, working out the refund), and why you split it that way. Then your numbers: your training score from `scoring/score.py`, time and cost per complaint, and one case your agent gets wrong and why. | Presentation, engineering |
+| 5–12 | **Human gate, live.** We send 3 new complaints to your API, one at a time. For each one, without touching your code: the case appears on its own, and you show the matched transaction and its evidence, the decision and refund, the route and queue, the reply and the self-check result. Leave the approval case waiting, show that the customer hasn't received anything, then approve it in your UI. Show the fraud case in the fraud queue. | Human gate (10 points) |
+| 12–17 | **Your back office.** Built the ops platform? Drive the three cases in [`docs/bonus_platform.md`](docs/bonus_platform.md#what-to-show) and show the audit log and the numbers. Didn't? Show how an officer works through the queue: the case view with its evidence, approvals, and the numbers a manager would watch (volumes, time per case, share auto-resolved). | Demo and business value; ops platform (25 points) if built |
+| 17–20 | **One decision in your code.** Trace a case from complaint to reply: where the transaction is found, where the refund is worked out, where the self-check runs, and what happens when nothing matches. | Engineering |
+| 20–30 | **Questions.** Expect: how is the refund worked out, what happens when the LLM gets it wrong, what does one complaint cost, what would you do next. | Presentation, engineering |
+
+**Before your slot:** your API is running and reachable from another laptop, your UI is open, the laptop is on power with sleep turned off, and screen sharing works. Don't change code during the demo: the agent was frozen at 15:00.
+
+Reply quality is judged separately: judges read your replies to the same 10 test complaints as every other team.
 
 ## Ground rules
 
