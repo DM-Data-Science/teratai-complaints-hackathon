@@ -196,7 +196,7 @@ Can't open a pull request? Send the organisers the same four things (`prediction
 - your API is running on the venue network and a teammate's laptop can reach it (`python scoring/api_check.py http://<your-ip>:<port>` passes);
 - the laptop running it stays plugged in and awake until your demo ends (turn sleep off), with enough LLM quota for 20 complaints at once.
 
-15:00 freezes the agent and its API: we take your leaderboard and hidden-test scores right after, so later changes to the agent don't count. You can keep working on your UI and the optional ops platform until 16:30, then demo.
+15:00 freezes the agent and its API: we lock the `predictions.csv` in your PR as it is at 15:00 (a file pushed later is not scored) and take your hidden-test score right after, so later changes to the agent don't count. You can keep working on your UI and the optional ops platform until 16:30, then demo.
 
 Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
 
