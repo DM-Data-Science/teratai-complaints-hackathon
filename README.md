@@ -139,10 +139,10 @@ Every live complaint is the six fields of a `complaints.csv` row as JSON. [`exam
 | 13:00 | Lunch |
 | 15:00 | **Agent and API freeze:** predictions due (PR with commit hash and API URL); your API must be running |
 | 15:00–15:45 | Organisers score the predictions and run the hidden test on every team's API. Keep it running |
-| 15:00–16:30 | Keep working on your UI and the optional ops platform |
-| 16:30 | Demos: 20 minutes per team plus 10 minutes of questions, in an order we post on the day (see [Your demo](#your-demo)) |
-| After the last demo | Final judging |
-| Then | Awards |
+| 15:00–16:30 | Keep working on your UI and the optional ops platform. 16:30 is the end of building for every team, whatever your demo slot |
+| 16:30–18:30 | Demos, one team at a time: 20 minutes plus 10 minutes of questions each (see [Your demo](#your-demo)). We post the order on the day; the next team sets up during the previous team's questions |
+| 18:30 | Final judging |
+| 18:50 | Awards |
 
 The 750 test complaints are in `complaints.csv` from the start, so you can run them whenever you are ready. Don't leave a 750-complaint LLM run for the last hour.
 
