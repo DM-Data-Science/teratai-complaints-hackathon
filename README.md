@@ -182,6 +182,11 @@ An optional, separately scored criterion in the final ranking ("Best Ops Platfor
 3. Save `submissions/<team-name>/predictions.csv` with these columns: `complaint_id, category, matched_txn_id, outcome, refund_amount_myr, priority, reply_language, route, reply_text`. The format is in [`docs/scoring.md`](docs/scoring.md).
 4. Open a pull request from your fork to this repo, titled `Submission: <team-name>`, before **15:00 on Day 2**. The PR only needs the predictions file; your code can stay in your fork. In the PR description put your **freeze commit hash** (the last commit in your fork at 15:00) and your **API URL**.
 
+**Before 15:00 on Day 2, check:**
+- the PR is open with `predictions.csv` for all 750 test complaints, your freeze commit hash and your API URL;
+- your API is running on the venue network and a teammate's laptop can reach it (`python scoring/api_check.py http://<your-ip>:<port>` passes);
+- the laptop running it stays plugged in and awake until your demo ends (turn sleep off), with enough LLM quota for 20 complaints at once.
+
 15:00 freezes the agent and its API: we take your leaderboard and hidden-test scores right after, so later changes to the agent don't count. You can keep working on your UI and the optional ops platform until 16:30, then demo.
 
 Building the [bonus ops platform](docs/bonus_platform.md)? Your `predictions.csv` is still the agent's autonomous output, exported from your database and scored exactly as above — the platform does not change what you submit.
@@ -209,6 +214,8 @@ If this repo changes before the event (clarifications only, never the data), syn
 **Do we need to build an API?** Yes, a small one with a fixed contract: `POST /complaints`, `GET /cases/{complaint_id}` and `GET /health` ([`docs/api.md`](docs/api.md)). It's about 30 lines with FastAPI ([`docs/build_guide.md`](docs/build_guide.md#the-api)). It's how the live round sends you complaints, so every team is tested the same way. Check yours with `python scoring/api_check.py`.
 
 **How do approvals work through the API?** Each case carries `case_state` (`auto_resolved`, `awaiting_approval`, `with_fraud_team`, `approved`, `rejected`) and `sent`. A person acts with `POST /cases/{id}/actions`: approve, reject, or edit and approve, with their name and a reason. An edited reply must pass your self-check. The agent's own decision never changes; the human's action is stored next to it in `human_action`. Your UI's buttons can call the same endpoint. Details and examples: [`docs/api.md`](docs/api.md#post-casescomplaint_idactions).
+
+**Our API works on localhost but you can't reach it?** Almost always the firewall or the host binding: listen on `0.0.0.0`, allow your port through Windows Firewall (or use a tunnel such as ngrok), and test from a teammate's laptop. Details: [`docs/api.md`](docs/api.md#being-reachable-in-the-live-round).
 
 **Do we need an API gateway, keys or rate limits?** No. Our calls carry no credentials. We do check that bad input gets a `4xx` instead of a crash, that posting the same complaint twice doesn't create a second case, and how long each complaint takes; those results feed the engineering score.
 
