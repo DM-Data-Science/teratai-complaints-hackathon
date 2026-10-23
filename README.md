@@ -208,11 +208,16 @@ If this repo changes before the event (clarifications only, never the data), syn
 
 | Minutes | Show and tell | What the judges score |
 |---|---|---|
-| 0–5 | **The problem and your design.** One diagram: what the LLM does (reading the complaint, writing the reply), what code does (finding the transaction, applying the policy, working out the refund), and why you split it that way. Then your numbers: your training score from `scoring/score.py`, time and cost per complaint, and one case your agent gets wrong and why. | Presentation, engineering |
+| 0–5 | **The problem and your design.** One diagram of how your main pipeline is orchestrated, from a complaint arriving to the reply going out: the steps in order, what the LLM does (reading the complaint, writing the reply), what code does (finding the transaction, applying the policy, working out the refund), and why you split it that way. Then your numbers: your training score from `scoring/score.py`, time and cost per complaint, and one case your agent gets wrong and why. | Presentation, engineering |
 | 5–12 | **Human gate, live.** We send 3 new complaints to your API, one at a time. For each one, without touching your code: the case appears on its own, and you show the matched transaction and its evidence, the decision and refund, the route and queue, the reply and the self-check result. Leave the approval case waiting, show that the customer hasn't received anything, then approve it in your UI. Show the fraud case in the fraud queue. | Human gate (10 points) |
 | 12–17 | **Your back office.** Built the ops platform? Drive the three cases in [`docs/bonus_platform.md`](docs/bonus_platform.md#what-to-show) and show the audit log and the numbers. Didn't? Show how an officer works through the queue: the case view with its evidence, approvals, and the numbers a manager would watch (volumes, time per case, share auto-resolved). | Demo and business value; ops platform (25 points) if built |
 | 17–20 | **One decision in your code.** Trace a case from complaint to reply: where the transaction is found, where the refund is worked out, where the self-check runs, and what happens when nothing matches. | Engineering |
-| 20–30 | **Questions.** Expect: how is the refund worked out, what happens when the LLM gets it wrong, what does one complaint cost, what would you do next. | Presentation, engineering |
+| 20–30 | **Questions.** Every team gets the three below, plus questions on your own design (how the refund is worked out, what happens when the LLM gets it wrong, what one complaint costs). | Presentation, engineering, ops platform |
+
+**The three questions every team gets** (prepare short answers; you can also cover them in your 20 minutes):
+1. **Scale.** Can your endpoint and app scale? How do you make sure of it, or plan for it, and how do you test it?
+2. **Users.** How did you design the user system: who the users are, their roles, and what each can see and do? (No ops platform? Tell us how you would.)
+3. **Ops platform.** Why did you design it the way you did: what is shown, and what is each user's journey through it? (No ops platform? Skip this one.)
 
 **Before your slot:** your API is running and reachable from another laptop, your UI is open, the laptop is on power with sleep turned off, and screen sharing works. Don't change code during the demo: the agent was frozen at 15:00.
 
