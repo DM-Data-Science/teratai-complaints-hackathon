@@ -1,6 +1,6 @@
 # Bonus: the ops platform
 
-**This is an optional bonus, judged as a separate award ("Best Ops Platform"). It does not change the main ranking or the leaderboard.** Build it only once your core agent works. A team that nails accuracy and skips this is not penalised. The agent and its API freeze at 15:00 on Day 2, but you can keep building this platform right up to the 16:30 demo ([README.md](../README.md)).
+**This is an optional, separately scored part of the final ranking: the "Best Ops Platform" criterion, worth 25 of the 150 points. It is judged on its own and does not change your leaderboard/accuracy score.** Build it only once your core agent works — a team that skips it simply forgoes these 25 points and competes for the other 125. The agent and its API freeze at 15:00 on Day 2, but you can keep building this platform right up to the 16:30 demo ([README.md](../README.md)).
 
 The core brief already defines the human-in-the-loop API ([`api.md`](api.md)): every case has a `case_state`, a `sent` flag and a `human_action`, and people act on cases through `POST /cases/{id}/actions` (`approve`, `reject`, `edit_approve`). For the main ranking that can be driven from a thin UI or even curl. **This bonus turns that same contract into a real back-office system:** the people a case is routed to sign in, see only their cases, and act on them through screens built for their job.
 
@@ -69,6 +69,28 @@ The fraud and approval teams do different jobs, so give them different screens r
 
 Keep the shared mechanics identical everywhere: the self-check re-runs on any reply edit, every action is appended to the audit log, and the agent's original decision is never overwritten.
 
+## Insights: a dashboard, a chat, or both
+
+A bank runs on numbers, so give staff a way to see them. Build a metrics **dashboard**, a natural-language **chat** over the case data, or both. Everything here only reads — from the cases your agent wrote plus the source CSVs; it changes nothing and sends nothing.
+
+Most of these come straight from the case records; a few join back to the data:
+
+| Group | Examples |
+|---|---|
+| **Volume** | complaints over time; by `channel`, `category`, `priority`, `reply_language` |
+| **Outcomes** | REFUND / DECLINE / INVESTIGATE / INFO_ONLY split; auto-resolve rate; route mix |
+| **Money** | total and average refund paid; value awaiting approval; wrongful-refund near-misses |
+| **Operations** | approval turnaround (`awaiting_approval` → `approved`); SLA adherence and breaches (`data/sla_policy.csv`); backlog by queue |
+| **Guardrails** | self-check flag rate; **override rate** (`human_action` differs from the agent); rejection and escalation rates |
+| **Fraud** | fraud volume, P1 count, recall attempts and their outcomes |
+| **Customer** (source data) | complaint rate by `segment` or location; repeat complainers; most-disputed merchants |
+
+**Dashboard.** Charts and tiles, filterable by date, category and channel — fast for the questions people ask every day. (If you build charts, keep them legible in light and dark.)
+
+**AI chat.** Ask in plain English: *"how many duplicate-charge refunds today?"*, *"total paid out this week?"*. One hard rule, the same principle as the agent — **code does the numbers, the LLM does the language**: the chat must answer by running a query (SQL or a tool) over the data, never by guessing, and should show the query or figures it used so a judge can trust the answer. Keep it **read-only**: no approvals or edits through chat — actions stay on `POST /cases/{id}/actions` with their audit trail.
+
+**Who sees what.** Either is fine for the bonus; a shared view for everyone is acceptable. Recommended, though, is to **scope insights to the role**, reusing the same boundary as the queues: an officer sees approval-queue stats, a fraud analyst sees fraud stats, and the manager sees everything plus cross-queue comparisons — the only full-picture view, as with the queues. Define one metric catalogue and filter it by role rather than building three pipelines; for the chat, scope the data it can query the same way.
+
 ## Integrity: the agent's decision vs the human's action
 
 The API already draws this line, and the platform must keep it:
@@ -93,19 +115,20 @@ Keep the agent's decision fields immutable on `cases`; record every change as a 
 ## Stretch ideas
 
 - **SLA clocks.** `data/sla_policy.csv` has acknowledge/resolve targets by priority. Show each case's due time and flag overdue cases; sort queues by SLA + priority.
-- **Admin dashboard.** Auto-resolve rate, approval turnaround, **override rate** (how often humans change the agent), self-check catches, critical-error near-misses.
+- **Deeper analytics.** On top of the insights above: trends over time, anomaly flags (a spike in one category or merchant), or a drill-down from any dashboard tile to the underlying cases.
 - **Outbound log.** The API already has an outbox and a `sent` flag; record each sent message with its timestamp and who authorised it — the proof nothing reached the customer without approval.
 - **Notifications.** Alert a role when a new case lands in its queue.
 
 ## How it's judged
 
-A separate optional award, judged on top of the main demo and independent of the 30/25/25/20 ranking:
+The 25-point "Business ops platform" criterion in the final ranking, scored independently of your leaderboard/accuracy score:
 
 - **Does the human gate actually hold?** Approval-needed cases wait; fraud cases land with the fraud team; escalations wait for the manager; nothing is sent without a human.
 - **Role separation.** Officers, analysts and the manager each see only what they should, through interfaces fitted to their job.
 - **Two-tier approval.** First tier clears within its limit; over-limit or sensitive cases escalate to the manager and wait.
 - **Guardrail on edits.** The self-check re-runs on human-edited replies.
 - **Auditability.** You can show who did what and why, and the agent-vs-human gap.
+- **Insights.** Staff can see the numbers that matter, and any chat answers come from real queries over the data, not guesses.
 - **Would a bank actually use it.** Clarity and realism of the workflow.
 
 ## What to show
